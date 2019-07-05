@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <arg name="namespace" default="mbot_perception" />
+  <group ns="$(arg namespace)">
+
+    <arg name="tracker_node_name" default="small_objects_tracker" />
+    <arg name="launch_generic"    default="false" />
+    <arg name="launch_specific"   default="false" />
+    <arg name="target_frame"      default="/map" />
+
+    <arg name="tracked_small_objects_pose_array"  default="small_objects_tracker/pose_array" />
+    <arg name="tracked_small_objects_array"       default="small_objects_tracker/tracked_objects" />
+
+    <!-- Specific Detector -->
+    <include if="$(arg launch_specific)" file="$(find darknet_ros_py)/ros/launch/darknet_ros_py.launch" >
+      <arg name="config_file" default="$(find darknet_ros_py)/ros/config/erl/erl_known_head.yaml" />
+      <arg name="threshold" value="0.8"/>
+      <arg name="input_topic" value="/head_camera/rgb/image_rect_color"/>
+      <arg name="debug" value="false"/>
+      <arg name="only_best" value="false"/>
+      <arg name="node_name" value="specific_detector"/>
+    </include>
+
+    <!-- Specific Localizer -->
+    <include if="$(arg launch_specific)" file="$(find mbot_object_localization)/ros/launch/mbot_object_localization.launch" >
+      <arg name="remove_intersections" value="true"/>
+      <arg name="roi_array_topic" value="specific_detector/detections" />
+      <arg name="node_name" value="specific_localizer" />
+    </include>
+
+    <!-- Relay output of detectors, nice to have -->
+    <node if="$(arg launch_generic)" pkg="topic_tools" type="relay" name="relay_generic_detector" output="log" args="generic_detector/detections detected_objects">
+      <param name="lazy" value="true"/> 
+    </node>
+    <node if="$(arg launch_specific)" pkg="topic_tools" type="relay" name="relay_specific_detector" output="log" args="specific_detector/detections detected_objects">
+      <param name="lazy" value="true"/> 
+    </node>
+
+    <!-- Relay output of localizers, tracker needs as one topic only-->
+    <node if="$(arg launch_generic)" pkg="topic_tools" type="relay" name="relay_generic_localizer" output="log" args="generic_localizer/localized_objects localized_objects">
+      <param name="lazy" value="true"/> 
+    </node>
+    <node if="$(arg launch_specific)" pkg="topic_tools" type="relay" name="relay_specific_localizer" output="log" args="specific_localizer/localized_objects localized_objects">
+      <param name="lazy" value="true"/> 
+    </node>
+
+    <!-- Small Objects Tracking -->
+    <node pkg="bayes_objects_tracker" type="bayes_objects_tracker" name="$(arg tracker_node_name)" output="screen" respawn="true">
+      <rosparam command="load" file="$(find bayes_objects_tracker)/config/small_objects/detectors.yaml"/>
+      <rosparam command="load" file="$(find bayes_objects_tracker)/config/small_objects/names.yaml"/>
+      <rosparam command="load" file="$(find bayes_objects_tracker)/config/small_objects/confusion_matrix.yaml"/>
+      <param name="target_frame"          value="$(arg target_frame)" type="string"/>
+      <param name="pose_array"            value="$(arg tracked_small_objects_pose_array)" type="string"/>
+      <param name="tracked_objects_array" value="$(arg tracked_small_objects_array)" type="string"/>
+    </node>
+
+  </group>
+</launch> 

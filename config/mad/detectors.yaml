@@ -1,0 +1,17 @@
+filter_type: UKF                       # The Kalman filter type, EKF = Extended Kalman Filter, UKF = Uncented Kalman Filter
+prediction_type: S                     # The prediction model type, CV = Constant velocity, S = Static (velocity = 0) TODO add decreasing velocity model, free fall just for fun
+cv_noise_params:                       # The noise for the constant velocity prediction model. Required if prediction_type: CV
+    x: 0.0001
+    y: 0.0001
+    z: 0.0001
+sequence_size: 7                       # Minimum number of unmatched observations to create new track hypothesis from a sequence. Must be greater than 0.
+detectors:                             # Add detectors under this namespace
+    upper_body:                        # Name of detector (used internally to identify them). Has to be unique.
+        topic: "specific_localizer/localized_objects"     # The topic on which the detections are published
+        cartesian_noise_params:        # The noise for the cartesian observation model
+            x: 0.4
+            y: 0.4
+            z: 0.4
+        matching_algorithm: "NNJPDA"   # The algorithm to match different detections. NN = Nearest Neighbour, NNJPDA = NN Joint Probability Data Association
+detection_sampling_radius: 0.15
+maximum_detection_distance: 2.0 # TODO use this parameter

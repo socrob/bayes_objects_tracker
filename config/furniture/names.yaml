@@ -1,0 +1,12 @@
+names: [
+chair,
+pottedplant,
+diningtable
+#bench,
+#sofa,
+#bed,
+#toilet,
+#refrigerator
+]
+
+# furniture objects not required for ERL-Madrid are commented out
